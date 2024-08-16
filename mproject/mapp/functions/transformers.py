@@ -4,6 +4,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
 import pickle
 import os
+import numpy as np
+
 
 # Path to the dataset
 DATASET_PATH = os.path.join('mapp', 'dataset', 'df_baru_original.csv')
@@ -56,8 +58,14 @@ class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X):
         output = X.copy()
         for col in self.columns:
-            output[col] = self.encoders[col].transform(X[col])
+            le = self.encoders[col]
+            unseen_labels = set(X[col]) - set(le.classes_)
+            if unseen_labels:
+                # Add new labels to the existing LabelEncoder
+                le.classes_ = np.concatenate([le.classes_, np.array(list(unseen_labels))])
+            output[col] = le.transform(X[col])
         return output
+
 
 label_encoder = MultiColumnLabelEncoder(columns=nominal_columns)
 
